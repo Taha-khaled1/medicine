@@ -9,19 +9,21 @@ use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Carbon\Carbon;
+// // Convert Arabic/Persian numbers to English if needed
+// $count = $this->convertArabicNumbers($row['count']);
+// $subUnitPerUnit = $this->convertArabicNumbers($row['subunit_unit']);
+// $countOfSubunit = $this->convertArabicNumbers($row['countofsubunit']);
+// $pricePerUnit = $this->convertArabicNumbers($row['price_unit']);
+
+// // Parse expiry date
+// $expiryDate = $this->parseExpiryDate($row['expire_date'] ?? '');
 
 class MedicinesImport implements ToModel, WithHeadingRow, WithValidation
 {
     public function model(array $row)
     {
-        // Convert Arabic/Persian numbers to English if needed
-        $count = $this->convertArabicNumbers($row['count']);
-        $subUnitPerUnit = $this->convertArabicNumbers($row['subunit_unit']);
-        $countOfSubunit = $this->convertArabicNumbers($row['countofsubunit']);
-        $pricePerUnit = $this->convertArabicNumbers($row['price_unit']);
-
-        // Parse expiry date
-        $expiryDate = $this->parseExpiryDate($row['expire_date'] ?? '');
+        // Parse and format the expiry date
+        $expiryDate = $this->formatExpiryDate($row['expire_date'] ?? null);
 
         return new Medicine([
             'name' => $row['medicinename'],
@@ -35,6 +37,29 @@ class MedicinesImport implements ToModel, WithHeadingRow, WithValidation
         ]);
     }
 
+    private function formatExpiryDate($date)
+    {
+        // Default date if no date is provided
+        if (empty($date)) {
+            return '4030-12-01';
+        }
+
+        try {
+            // Check if the date is in the format "9/2027" or "09/2027"
+            if (preg_match('/^(\d{1,2})\/(\d{4})$/', $date, $matches)) {
+                $month = str_pad($matches[1], 2, '0', STR_PAD_LEFT); // Ensure month is 2 digits
+                $year = $matches[2];
+                return "{$year}-{$month}-01"; // Always use 01 for day
+            }
+
+            // If the date format doesn't match, return default date
+            return '4030-12-01';
+        } catch (\Exception $e) {
+            // If any error occurs, return default date
+            return '4030-12-01';
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -45,7 +70,7 @@ class MedicinesImport implements ToModel, WithHeadingRow, WithValidation
             'countofsubunit' => 'required',
             'price_unit' => 'required',
             'dosageform' => 'required',
-            'expire_date' => 'required',
+            'expire_date' => 'nullable', // Changed to nullable since we have a default value
         ];
     }
 
