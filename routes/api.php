@@ -9,7 +9,9 @@ use App\Http\Controllers\Api\ContactUsController;
 use App\Http\Controllers\Api\MyGameController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\QuestionController;
+use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\SettingPageController;
+use App\Http\Controllers\Api\ShiftController;
 use App\Http\Controllers\MedicineController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +19,20 @@ use Illuminate\Support\Facades\Route;
 Route::group(
     ['middleware' => ['ChangeLanguage']],
     function () {
+
+        Route::prefix('shifts')->group(function () {
+            Route::post('/open', [ShiftController::class, 'openShift']);
+            Route::get('/', [ShiftController::class, 'getAllShifts']);
+
+            Route::post('/close', [ShiftController::class, 'closeShift']);
+        });
+
+        Route::prefix('sales')->group(function () {
+            Route::post('/', [SaleController::class, 'createSale']);
+            Route::get('/', [SaleController::class, 'getAllSales']);
+        });
+
+
         Route::post('verification-notification', [EmailVerificationController::class, 'verificationNotification']);
         Route::post('verify-code', [EmailVerificationController::class, 'verifyCode']);
         Route::post('reset-password', [ResetPasswordController::class, 'resetPassword'])->middleware('sanctum');
